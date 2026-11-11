@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B2 First Practice Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: fixed control rail on top (test, timer, parts), one working panel below; reading parts split text | questions */
+:root{
+  --bg:#e6e9ec; --panel:#f6f7f8; --panel2:#eceff1; --ink:#1c2125; --muted:#59636c; --line:#c3cad1;
+  --accent:#c9590a; --accent-ink:#ffffff; --ok:#1c7548; --bad:#b3261e; --part:#8a6100;
+  --okbg:#dff1e7; --badbg:#f8e1df; --partbg:#f6ecd0;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#15181b; --panel:#1e2226; --panel2:#262b30; --ink:#e3e6e9; --muted:#97a1aa; --line:#363d44;
+    --accent:#ff8a1f; --accent-ink:#15181b; --ok:#4cc38a; --bad:#ff7366; --part:#e6b84a;
+    --okbg:#173326; --badbg:#3a1f1c; --partbg:#3a3118;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#15181b; --panel:#1e2226; --panel2:#262b30; --ink:#e3e6e9; --muted:#97a1aa; --line:#363d44;
+  --accent:#ff8a1f; --accent-ink:#15181b; --ok:#4cc38a; --bad:#ff7366; --part:#e6b84a;
+  --okbg:#173326; --badbg:#3a1f1c; --partbg:#3a3118;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header{border-bottom:2px solid var(--accent);background:var(--panel)}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between;padding:16px 0}
+h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.04em;text-transform:uppercase;margin:0;line-height:1}
+h1 small{display:block;font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:.02em;text-transform:none;color:var(--muted);margin-top:6px}
+.ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.seg{display:flex;border:1px solid var(--line)}
+.seg button{background:transparent;border:0;padding:7px 16px;font-family:var(--display);font-size:17px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.timer{display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:3px 4px 3px 12px}
+.timer output{font-family:var(--display);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;min-width:66px}
+.timer.done output{color:var(--bad)}
+.btn{background:var(--panel2);border:1px solid var(--line);padding:7px 14px;cursor:pointer;font-weight:600;font-size:15px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{padding:4px 10px;font-size:14px}
+nav{display:flex;gap:0;overflow-x:auto;border-top:1px solid var(--line)}
+nav button{flex:1 0 auto;background:transparent;border:0;border-right:1px solid var(--line);border-bottom:3px solid transparent;padding:9px 14px;cursor:pointer;text-align:left;min-width:118px}
+nav button:first-child{border-left:1px solid var(--line)}
+nav button b{display:block;font-family:var(--display);font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+nav button span{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap}
+nav button[aria-current="true"]{border-bottom-color:var(--accent);background:var(--panel2)}
+nav button .sc{font-variant-numeric:tabular-nums;font-weight:600}
+nav button .sc.done{color:var(--accent)}
+main{padding:26px 0 60px}
+.phead{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+h2{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin:0;text-wrap:balance}
+.tag{font-family:var(--display);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.instr{color:var(--muted);max-width:75ch;margin:0 0 18px}
+.panel{background:var(--panel);border:1px solid var(--line);padding:22px 24px}
+.panel h3{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:.03em;margin:0 0 10px}
+.panel p{margin:0 0 14px;max-width:70ch}
+.cloze p{line-height:2.25}
+.split{display:grid;gap:20px;grid-template-columns:1fr}
+@media(min-width:940px){.split{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}.split .stick{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+.gap{white-space:nowrap}
+.gap b{font-size:13px;font-weight:700;color:var(--accent);margin-right:4px;font-variant-numeric:tabular-nums}
+select,input[type=text]{background:var(--bg);border:1px solid var(--line);border-bottom:2px solid var(--muted);padding:3px 8px;border-radius:0}
+input[type=text]{width:130px}
+input.wide{width:min(100%,300px)}
+select:disabled,input:disabled{opacity:1}
+.ok{border-color:var(--ok)!important;background:var(--okbg)!important}
+.bad{border-color:var(--bad)!important;background:var(--badbg)!important}
+.partial{border-color:var(--part)!important;background:var(--partbg)!important}
+.stem{font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:15px;color:var(--muted);margin-left:5px}
+.q{border-top:1px solid var(--line);padding:14px 0}
+.q:first-child{border-top:0;padding-top:0}
+.q .qt{font-weight:600;margin:0 0 8px;display:flex;gap:10px}
+.q .qt b{color:var(--accent);font-variant-numeric:tabular-nums;flex:none}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:5px 8px;border:1px solid transparent;cursor:pointer}
+.opt input{margin-top:6px;accent-color:var(--accent)}
+.opt .l{font-weight:700;flex:none;width:16px}
+.kw{font-family:var(--display);font-weight:700;letter-spacing:.1em;font-size:18px;margin:4px 0!important}
+.wc{font-size:13px;color:var(--muted);margin-left:8px}
+.wc.warn{color:var(--part);font-weight:600}
+.sents{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.sents li{display:flex;gap:12px;padding:8px 10px;border:1px solid var(--line);background:var(--bg)}
+.sents li b{font-family:var(--display);font-size:19px;color:var(--accent)}
+.person{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.person:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.person h4{margin:0 0 4px;font-family:var(--display);font-size:20px;letter-spacing:.04em}
+.person h4 b{color:var(--accent);margin-right:8px}
+.row7{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:9px 0}
+.row7:first-child{border-top:0}
+.row7 span{flex:1}
+.row7 b{color:var(--accent);margin-right:8px;font-variant-numeric:tabular-nums}
+.fb{margin-top:8px;font-size:15px;padding:8px 12px;border-left:4px solid var(--line);background:var(--panel2)}
+.fb.ok{border-left-color:var(--ok)}.fb.bad{border-left-color:var(--bad)}.fb.partial{border-left-color:var(--part)}
+.fb.ok,.fb.bad,.fb.partial{background:var(--panel2)!important;border-top:0!important;border-right:0!important;border-bottom:0!important}
+.pill{display:inline-block;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:0 7px;margin-right:8px;color:#fff}
+.pill.ok{background:var(--ok)!important}.pill.bad{background:var(--bad)!important}.pill.partial{background:var(--part)!important}
+.fb .ans{font-weight:600}
+.fblist{margin-top:18px;display:grid;gap:6px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+.score{font-family:var(--display);font-size:24px;font-weight:600;margin-left:auto;font-variant-numeric:tabular-nums}
+.score em{font-style:normal;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right}
+.meter{height:8px;background:var(--panel2);border:1px solid var(--line);min-width:90px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
+.tile{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);padding:16px 18px}
+.tile .k{font-family:var(--display);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--display);font-size:40px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:20px;color:var(--muted);font-weight:500}
+.tile .s{font-size:14.5px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted);max-width:80ch;margin-top:22px}
+.tblwrap{overflow-x:auto}
+@media(max-width:560px){body{font-size:16px}.panel{padding:16px}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>B2 First Practice Bench<small>Reading and Use of English · 7 partes · 52 preguntas · 75 minutos</small></h1>
+      <div class="ctrl">
+        <div class="seg" id="testSel" role="group" aria-label="Elegir test"></div>
+        <div class="timer" id="timer">
+          <output id="clock">75:00</output>
+          <button class="btn sm" id="tToggle" type="button">Iniciar</button>
+          <button class="btn sm" id="tReset" type="button">Reiniciar</button>
+        </div>
+      </div>
+    </div>
+    <nav id="nav" aria-label="Partes del examen"></nav>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+
+<script>
+/*DATA-START*/
+const TESTS = [
+{
+ name:"Test 1",
+ p1:{title:"The return of the night train",
+  text:`For much of the twentieth century, travelling overnight by train was a perfectly ordinary way of getting across Europe. Then cheap flights arrived, and one sleeper service after another was {1} off the timetable. By 2015, many people had {2} to the conclusion that the night train belonged in a museum.
+
+Recently, however, sleepers have been making a remarkable comeback. Growing concern about the environmental {3} of flying has persuaded many travellers to look for alternatives, and rail companies have been quick to take {4} of this change. New routes now {5} cities that have not had a direct overnight service for decades.
+
+Supporters say the appeal is not only about pollution. You board in the evening, sleep while the train {6} hundreds of kilometres, and wake up in the centre of another city, ready to {7} the most of the day. Tickets are not always cheap, and delays are common, but passengers seem willing to put up with a certain {8} of inconvenience in return for the experience.`,
+  items:[
+   {o:["taken","put","set","called"],a:0,ex:"'Take something off the timetable' = retirar un servicio del horario."},
+   {o:["reached","arrived","come","drawn"],a:2,ex:"Colocación fija: 'come to the conclusion'. 'Reach' no lleva 'to'."},
+   {o:["result","impact","force","reaction"],a:1,ex:"'Environmental impact' es la colocación habitual."},
+   {o:["benefit","profit","opportunity","advantage"],a:3,ex:"'Take advantage of' = aprovechar."},
+   {o:["link","attach","combine","unite"],a:0,ex:"'Link' se usa para conectar dos lugares con una ruta."},
+   {o:["passes","spends","covers","reaches"],a:2,ex:"'Cover' una distancia = recorrerla."},
+   {o:["take","make","get","have"],a:1,ex:"Expresión fija: 'make the most of something'."},
+   {o:["number","size","sum","amount"],a:3,ex:"'Amount of' va con sustantivos incontables como 'inconvenience'."}
+  ]},
+ p2:{title:"Learning to juggle",
+  text:`A few years ago, I decided to teach {1} to juggle. I had always assumed it was something only circus performers could do, but a friend told me that anyone can learn {2} long as they are prepared to practise every day.
+
+At first I was hopeless. The balls went everywhere {3} into my hands, and I spent more time picking them up off the floor {4} actually throwing them. {5} made the difference was a piece of advice I found online: stop looking at your hands and concentrate on the highest point each ball reaches.
+
+Within a fortnight I could keep three balls in the air for about ten seconds, {6} may not sound impressive but felt like a real achievement. Since then, juggling {7} become my favourite way of taking a break from the computer. Scientists say that learning a new physical skill is good for the brain, and I am not surprised. I have never taken much interest {8} sport, yet this is one form of exercise I really look forward to.`,
+  items:[
+   {a:["myself"],ex:"Pronombre reflexivo: 'teach myself' = aprender por mi cuenta."},
+   {a:["as","so"],ex:"'As long as' / 'so long as' = siempre que."},
+   {a:["except","but"],ex:"'Everywhere except / but' = a todos lados menos."},
+   {a:["than"],ex:"Comparativo: 'more time ... than'."},
+   {a:["what"],ex:"'What' como sujeto = 'lo que': 'What made the difference was...'."},
+   {a:["which"],ex:"Relativa explicativa que se refiere a toda la idea anterior: 'which'."},
+   {a:["has"],ex:"'Since then' pide present perfect: 'has become'."},
+   {a:["in"],ex:"Preposición dependiente: 'take an interest in'."}
+  ]},
+ p3:{title:"Why we forget names",
+  text:`Most of us have had the {1} experience of being introduced to someone and forgetting their name within seconds. According to {2}, this is extremely common and has little to do with {3}. The problem is that a name, {4} a job or a hobby, tells us nothing about a person, so the brain has no obvious way of storing it. Our {5} to remember is made worse by the fact that, when we meet someone new, we are usually thinking about the {6} we are making rather than listening. Fortunately, there are some simple {7}. Repeating the name aloud is surprisingly {8}, as is linking it to an image.`,
+  items:[
+   {w:"EMBARRASS",a:["embarrassing"],ex:"Adjetivo en -ing: describe la experiencia, no a la persona."},
+   {w:"PSYCHOLOGY",a:["psychologists"],ex:"Hace falta la persona, y en plural (no hay artículo)."},
+   {w:"INTELLIGENT",a:["intelligence"],ex:"Sustantivo después de 'to do with'."},
+   {w:"LIKE",a:["unlike"],ex:"Prefijo negativo: el nombre, a diferencia de un trabajo, no dice nada."},
+   {w:"ABLE",a:["inability"],ex:"Sustantivo negativo: 'is made worse' indica un problema."},
+   {w:"IMPRESS",a:["impression"],ex:"'Make an impression': sustantivo."},
+   {w:"SOLVE",a:["solutions"],ex:"Sustantivo plural: 'there are some simple...'."},
+   {w:"EFFECT",a:["effective"],ex:"Adjetivo después de 'is surprisingly'."}
+  ]},
+ p4:{items:[
+   {s1:"I haven't seen my cousin for three years.",kw:"LAST",pre:"The",post:"my cousin was three years ago.",full:"^last time (that )?i saw$",h:["last time","i saw"],model:"last time I saw",ex:"'The last time + past simple' reemplaza al present perfect negativo con 'for'."},
+   {s1:"They cancelled the match because the weather was bad.",kw:"DUE",pre:"The match",post:"the bad weather.",full:"^was cancell?ed due to$",h:["was cancell?ed","due to"],model:"was cancelled due to",ex:"Voz pasiva + 'due to' seguido de sustantivo."},
+   {s1:"'You should see a doctor about that cough,' Maria told me.",kw:"ADVISED",pre:"Maria",post:"a doctor about my cough.",full:"^advised me to see$",h:["advised me","to see"],model:"advised me to see",ex:"Reported speech: 'advise + objeto + to infinitive'."},
+   {s1:"I regret not studying harder for the exam.",kw:"WISH",pre:"I",post:"harder for the exam.",full:"^wish (that )?i( had|'d) studied$",h:["wish (that )?i","( had|'d) studied"],model:"wish I had studied",ex:"Arrepentimiento sobre el pasado: 'wish + past perfect'."},
+   {s1:"It wasn't necessary for you to bring any food.",kw:"NEED",pre:"You",post:"any food.",full:"^((needn't|need not) have brought|(didn't|did not) need to bring)$",h:["(needn't|need not) have|(didn't|did not) need","have brought|to bring"],model:"needn't have brought / didn't need to bring",ex:"'Needn't have + participio': lo hiciste pero no hacía falta."},
+   {s1:"Tom is too young to drive a car.",kw:"OLD",pre:"Tom",post:"to drive a car.",full:"^(is not|isn't) old enough$",h:["^(is not|isn't)","old enough"],model:"isn't old enough",ex:"'Too + adjetivo' equivale a 'not + adjetivo opuesto + enough'."}
+  ]},
+ p5:{title:"The Repair Shop",
+  text:`When Nadia told her parents she was leaving her job at the bank to repair bicycles, her father laughed, assuming it was a joke. It took him most of the evening to accept that she meant it. 'You spent four years at university,' he kept saying, as though the degree were a debt she still owed somebody. Nadia did not argue. She had learned long ago that her father needed to say a thing several times before he could hear the answer.
+
+The workshop belonged to a man called Emil, who had run it for thirty years from a narrow building behind the railway station. Nadia had first gone there as a customer, with a bent wheel and no great expectations. Emil had fixed it in ten minutes, refused to charge her, and then spent half an hour explaining exactly what he had done. She went back the following Saturday with a bicycle that had nothing wrong with it.
+
+Working for Emil was not what she had imagined. For the first month he would not let her touch a customer's bicycle at all. Instead she cleaned tools, sorted screws into jars and watched. She found this humiliating at first, since she was twenty-six, not sixteen, but gradually she understood that he was not testing her patience. He simply believed that nobody could mend a machine they had not learned to look at properly. By the time he finally handed her a spanner, she realised she already knew where it should go.
+
+What surprised her most was how much of the job involved people rather than metal. Customers rarely described a problem accurately. They said the brakes were 'funny' or that there was 'a noise somewhere'. Emil would nod, ask about their journey to work, their children, the weather on the day it started, and somewhere in the conversation the real fault would reveal itself. At the bank, Nadia had been trained to keep such conversations short. Here they were the work.
+
+The money, of course, was terrible. She gave up her flat near the river and moved into a single room above a bakery, where the smell of bread woke her at five each morning. Friends from her old office took her out for dinner and looked at her hands, permanently grey around the nails, with an expression she could not quite read. One of them asked, kindly enough, when she thought she might come back. Nadia said she would let them know, and changed the subject.
+
+In the spring, Emil mentioned, without looking up from the wheel he was straightening, that he would be seventy in the autumn and that the lease on the building ran for another twelve years. He said nothing more, and neither did she. But that evening she stayed late, long after he had gone home, and for the first time she swept the floor not as someone who had been told to but as someone who expected to be standing on it for a very long time.`,
+  qs:[
+   {q:"Why did Nadia not argue with her father?",o:["She suspected he was partly right about her degree.","She did not want to spoil the evening.","She knew from experience that he needed time to take things in.","She had not yet fully made up her mind."],a:2,ex:"Párrafo 1: 'her father needed to say a thing several times before he could hear the answer'."},
+   {q:"Why did Nadia return to the workshop the following Saturday?",o:["She was looking for an excuse to spend more time there.","She felt she ought to pay Emil for the repair.","Her bicycle had developed another fault.","Emil had invited her to watch him work."],a:0,ex:"Volvió 'with a bicycle that had nothing wrong with it': no había motivo real, quería estar ahí."},
+   {q:"How did Nadia's feelings change during her first month?",o:["She grew increasingly impatient to do real repairs.","She began to doubt whether she was too old to learn.","She realised Emil was checking how committed she was.","She came to see the purpose behind what Emil asked her to do."],a:3,ex:"'Gradually she understood that he was not testing her patience': entendió que primero había que aprender a mirar."},
+   {q:"What point is made about customers in the fourth paragraph?",o:["They preferred talking to Emil rather than to Nadia.","The information needed to help them often came out indirectly.","They tended to exaggerate how serious a problem was.","They expected Emil to remember details of their lives."],a:1,ex:"'Somewhere in the conversation the real fault would reveal itself'."},
+   {q:"How did Nadia respond to her friend's question about coming back?",o:["She avoided giving a definite answer.","She made it clear she had no intention of returning.","She was offended by what it implied.","She admitted that she sometimes missed the office."],a:0,ex:"'Said she would let them know, and changed the subject'."},
+   {q:"What does Nadia's behaviour in the final paragraph show?",o:["She wanted to prove to Emil that she deserved the business.","She was grateful for a promise Emil had made.","She had begun to think of the workshop as her own future.","She was worried about what would happen when Emil retired."],a:2,ex:"Barre 'as someone who expected to be standing on it for a very long time'. Emil no promete nada explícitamente."}
+  ]},
+ p6:{title:"In search of quiet",
+  text:`Marta Olsen has an unusual job: she travels the world looking for places where nothing man-made can be heard. Armed with a set of sensitive microphones, she sits for hours in forests, deserts and on mountainsides, simply recording. {1} By that definition, she says, there are now fewer than fifty such places left in Europe.
+
+Olsen did not set out to become a collector of silence. She trained as a sound engineer and spent ten years working in recording studios. {2} When she finally did, during a camping trip in northern Norway, the experience affected her so deeply that she resigned a month later.
+
+The work demands a great deal of patience. A single aircraft passing overhead can ruin a recording that has taken all morning. {3} On one occasion in Scotland she waited eleven days for a single usable hour.
+
+What she captures is not, strictly speaking, silence at all. {4} Olsen argues that these are exactly the sounds human hearing evolved to detect, and that we feel calmer when we can hear them clearly.
+
+There is some scientific support for this view. Studies have shown that people recovering in hospital sleep better when traffic noise is reduced. {5} Such findings have encouraged several national parks to ask for her help in protecting their quietest areas.
+
+Not everyone is convinced that her mission matters. Some critics point out that most people live in cities and will never visit the places she records. {6} 'You don't have to go there,' she says. 'It is enough to know that somewhere like that still exists.'`,
+  sents:["Her recordings are full of wind, running water and the calls of distant birds.","When that happens, there is nothing to do but start again.","As a result, the equipment she uses has become much cheaper in recent years.","To qualify as truly quiet, a location must be free of human noise for at least fifteen minutes at a time.","Olsen accepts this, but believes it misses the point.","In all that time, it never occurred to her to listen to what lay outside them.","Others suggest that children in schools near airports learn to read more slowly."],
+  a:["D","F","B","A","G","E"],
+  ex:["La frase siguiente dice 'By that definition': hace falta una definición antes.","'In all that time' = los diez años; 'them' = los estudios; 'When she finally did' = escuchar.","'When that happens' se refiere al avión que arruina la grabación.","'These are exactly the sounds' necesita una lista de sonidos antes.","'Others' = otros estudios; después viene 'Such findings'.","'This' = la crítica anterior; la cita que sigue explica cuál es 'the point'."]},
+ p7:{title:"A month without a smartphone",
+  intro:"Four people describe what happened when they lived without a smartphone for a month.",
+  texts:[
+   {n:"Leon",b:"I gave up my smartphone for a month because my sister bet me I couldn't. The first week was awful: I kept reaching into my pocket for something that wasn't there. What I hadn't expected was how much I relied on it for directions. I got lost twice on the way to places I'd been to before, which was embarrassing. By the end, though, I'd started reading on the bus again, something I hadn't done since school. I won the bet, and went straight back to my phone the next morning. I don't regret that at all, but I do leave it at home now when I go for a walk."},
+   {n:"Priya",b:"My reason was simple: my phone broke and I couldn't afford a new one until payday. So it wasn't really a choice. The practical side was easier than I'd feared, since I borrowed an old phone that could make calls. The real difficulty was social. My friends organise everything in a group chat, and nobody remembered to tell me when plans changed, so I turned up at an empty café more than once. I felt left out, and a bit hurt, to be honest. On the other hand, I slept far better. When I finally bought a replacement, I deleted half the apps before I'd even left the shop."},
+   {n:"Tomasz",b:"I'd read an article claiming that people who quit their phones become more creative, and as a designer I was curious. I can't say I noticed any change in my work. My ideas were neither better nor worse. What did change was my mood in the evenings: without endless news to scroll through, I felt noticeably less anxious. My colleagues were less enthusiastic, as they had to email me things they'd normally have sent in a quick message, and one complained to our manager. I've kept the experiment going in a limited form: the phone now stays in a drawer after eight o'clock."},
+   {n:"Grace",b:"It was my teenage son's idea, oddly enough; he said I was on my phone more than he was, and he had a point. We did the month together. I thought I'd miss the camera most, but in fact I enjoyed looking at things without photographing them. What I truly missed was music, as I hadn't realised I no longer owned anything else to play it on. My son gave up after nine days, which I teased him about. I lasted the month, but I'd be lying if I said it changed my life. Within a week of getting the phone back, my habits were exactly what they had been."}
+  ],
+  qs:[
+   {q:"did not give up their phone by choice?",a:"B",ex:"Priya: 'my phone broke... it wasn't really a choice'."},
+   {q:"went back to an activity they had stopped doing years earlier?",a:"A",ex:"Leon: 'reading on the bus again, something I hadn't done since school'."},
+   {q:"caused inconvenience to the people they work with?",a:"C",ex:"Tomasz: los colegas tenían que mandarle mails y uno se quejó."},
+   {q:"accepted that a relative's criticism of them was fair?",a:"D",ex:"Grace: 'he said I was on my phone more than he was, and he had a point'."},
+   {q:"felt excluded by their friends?",a:"B",ex:"Priya: 'I felt left out, and a bit hurt'."},
+   {q:"took part in order to win a challenge?",a:"A",ex:"Leon: 'my sister bet me I couldn't'."},
+   {q:"found that a claim they had read did not apply to them?",a:"C",ex:"Tomasz: leyó que mejoraba la creatividad, pero 'I can't say I noticed any change in my work'."},
+   {q:"says the experience had no lasting effect on their behaviour?",a:"D",ex:"Grace: 'my habits were exactly what they had been'."},
+   {q:"noticed an improvement in the quality of their rest?",a:"B",ex:"Priya: 'I slept far better'."},
+   {q:"discovered they had no other way of doing something they enjoyed?",a:"D",ex:"Grace: no tenía otra cosa donde escuchar música."}
+  ]}
+},
+{
+ name:"Test 2",
+ p1:{title:"Bees in the city",
+  text:`Keeping bees was once regarded as a hobby for people living deep in the countryside. Over the last decade, however, hives have {1} up on rooftops, balconies and school playgrounds in cities all over the world.
+
+Part of the explanation {2} in the surprising fact that towns can be better for bees than farmland. City parks and gardens contain a wide {3} of flowering plants, which bloom at different times of the year, whereas modern farms often grow a single crop. As a result, urban bees are rarely {4} of food.
+
+New beekeepers should not, however, {5} the amount of work involved. Hives must be inspected regularly, and neighbours may need to be {6} that the insects pose little danger. It is also {7} taking a course before buying any equipment, since mistakes made in the first year can be costly. Those who {8} in getting a colony through its first winter, though, usually find they are hooked for life.`,
+  items:[
+   {o:["jumped","sprung","risen","lifted"],a:1,ex:"Phrasal verb 'spring up' = aparecer de repente en muchos lugares."},
+   {o:["lies","stays","stands","sits"],a:0,ex:"'The explanation lies in...' = la explicación está en."},
+   {o:["difference","mixture","collection","variety"],a:3,ex:"Colocación: 'a wide variety of'."},
+   {o:["lacking","scarce","short","missing"],a:2,ex:"'Be short of something' = tener poco de algo. 'Lacking' iría con 'in'."},
+   {o:["underestimate","undervalue","undercharge","undergo"],a:0,ex:"'Underestimate the amount of work' = subestimar."},
+   {o:["confirmed","guaranteed","insured","reassured"],a:3,ex:"'Reassure someone that...' = tranquilizar a alguien."},
+   {o:["valuable","worth","useful","deserving"],a:1,ex:"'It is worth + -ing'."},
+   {o:["manage","achieve","succeed","fulfil"],a:2,ex:"'Succeed in + -ing'. 'Manage' iría con 'to + infinitivo'."}
+  ]},
+ p2:{title:"My grandmother's recipe book",
+  text:`When my grandmother died, she left me a notebook full of recipes written {1} hand. For years it sat on a shelf, largely because I had {2} idea how to follow her instructions. She never gave exact quantities; a typical line would say 'add flour {3} the mixture feels right'.
+
+Last winter I finally decided to cook my way through the whole book, {4} difficult it turned out to be. Some dishes were disasters. Her apple cake, for instance, took me five attempts, and I was {5} the point of giving up when I remembered that her oven had always been much hotter than mine.
+
+The project taught me more than cooking. Each recipe reminded me {6} a particular afternoon in her kitchen, and several had notes in the margin saying {7} the dish had been made for. I have now started adding notes of my {8}, in the hope that someone will read them one day.`,
+  items:[
+   {a:["by"],ex:"'Written by hand' = escrito a mano."},
+   {a:["no","little"],ex:"'Have no idea how to...'."},
+   {a:["until","till"],ex:"'Until' = hasta que."},
+   {a:["however"],ex:"'However + adjetivo' = por más difícil que resultara."},
+   {a:["on","at"],ex:"'Be on the point of + -ing' = estar a punto de."},
+   {a:["of"],ex:"'Remind someone of something'."},
+   {a:["who","whom"],ex:"Pregunta indirecta sobre una persona: 'who the dish had been made for'."},
+   {a:["own"],ex:"'Of my own' = propias."}
+  ]},
+ p3:{title:"Volunteering abroad",
+  text:`Every year, thousands of young people spend their holidays doing {1} work overseas. The idea is certainly {2}: you travel, meet people and make a {3} to a community in need. However, some experts have begun to {4} such schemes. They argue that {5} visitors who stay for only a fortnight may do more harm than good, and that local workers could do the same jobs far more {6}. Anyone thinking of applying should therefore choose an {7} carefully and be {8} about how much they can achieve.`,
+  items:[
+   {w:"VOLUNTEER",a:["voluntary"],ex:"Adjetivo delante de 'work'."},
+   {w:"ATTRACT",a:["attractive"],ex:"Adjetivo después de 'is certainly'."},
+   {w:"CONTRIBUTE",a:["contribution"],ex:"'Make a contribution': sustantivo."},
+   {w:"CRITIC",a:["criticise","criticize"],ex:"Verbo después de 'begun to'."},
+   {w:"SKILL",a:["unskilled"],ex:"Adjetivo negativo: 'may do more harm than good' da la pista."},
+   {w:"EFFICIENT",a:["efficiently"],ex:"Adverbio que modifica 'do the same jobs'."},
+   {w:"ORGANISE",a:["organisation","organization"],ex:"Sustantivo singular después de 'an'."},
+   {w:"REAL",a:["realistic"],ex:"'Be realistic about' = ser realista."}
+  ]},
+ p4:{items:[
+   {s1:"Nobody in the class sings as well as Julia.",kw:"BETTER",pre:"Julia",post:"anyone else in the class.",full:"^sings better than$",h:["sings better","than$"],model:"sings better than",ex:"De 'nobody ... as well as' a comparativo afirmativo."},
+   {s1:"'I'm sorry I broke your camera,' said Ben.",kw:"APOLOGISED",pre:"Ben",post:"my camera.",full:"^apologi[sz]ed for (breaking|having broken)$",h:["apologi[sz]ed for","breaking|having broken"],model:"apologised for breaking",ex:"'Apologise for + -ing'."},
+   {s1:"We couldn't go sailing because of the strong wind.",kw:"PREVENTED",pre:"The strong wind",post:"sailing.",full:"^prevented us (from )?going$",h:["prevented us","going$"],model:"prevented us from going",ex:"'Prevent someone from + -ing'."},
+   {s1:"I'm sure Sam didn't take your keys; he was with me all day.",kw:"HAVE",pre:"Sam",post:"your keys; he was with me all day.",full:"^(can't|cannot|can not|couldn't|could not) have taken$",h:["(can't|cannot|can not|couldn't|could not) have","taken$"],model:"can't have taken",ex:"Deducción negativa sobre el pasado: 'can't have + participio'."},
+   {s1:"The film was so boring that we left before the end.",kw:"SUCH",pre:"It was",post:"that we left before the end.",full:"^such a boring film$",h:["such a","boring film"],model:"such a boring film",ex:"'So + adjetivo' pasa a 'such a + adjetivo + sustantivo'."},
+   {s1:"Someone is repairing our roof at the moment.",kw:"HAVING",pre:"We",post:"repaired at the moment.",full:"^are having our roof$",h:["are having","our roof"],model:"are having our roof",ex:"Causativa: 'have something done'."}
+  ]},
+ p5:{title:"The Chess Teacher",
+  text:`I never intended to teach chess. I had come to Riverside School to cover a mathematics teacher's absence for six weeks, and the chess club was simply one of the duties I inherited, along with a broken projector and a drawer full of unmarked homework. The club had four members when I arrived. They met on Thursdays in a room that smelled of floor polish, and they played in complete silence, as though the game were a kind of punishment.
+
+My own chess was nothing special. I had played as a teenager and then stopped, as most people do, when I discovered I would never be brilliant at it. But I remembered enough to see that these four children had been taught the rules and nothing else. Nobody had told them that chess could be funny, or cruel, or beautiful. So in my second week I did something the previous teacher would probably not have approved of: I lost to each of them on purpose, loudly, complaining at every move. By the end of the hour they were laughing, and the following Thursday there were nine of them.
+
+Numbers kept rising, which created difficulties of its own. We ran out of boards, then out of chairs. The headteacher, who had shown no interest in the club before, began to mention it in assemblies, and I sensed that she was starting to see it as proof of something about the school. I was uneasy about that. What I liked about the club was precisely that it proved nothing. Children came because they wanted to, and some of the keenest were pupils who, according to their reports, struggled to concentrate on anything at all.
+
+One of these was a boy named Daniyar. In lessons he was, by every account, impossible; in the chess room he would sit motionless for twenty minutes working out a single move. I once asked him why chess was different. He thought about it with the same seriousness he gave to the board and said, 'Because here, when I get it wrong, I can see why.' I have repeated that sentence to a great many teachers since. Most of them nod politely. A few go very quiet.
+
+My six weeks became a term, and the term became three years. I would like to claim that the club produced champions, but it did not; our best result was fourth place in a regional tournament, celebrated as if we had won the world title. What it produced instead was harder to measure. When I finally left, the children gave me a board they had made themselves in the workshop. One of the squares is slightly the wrong size. I have never wanted to play on any other.`,
+  qs:[
+   {q:"What impression does the writer give of the chess club in the first paragraph?",o:["It was badly organised.","Its members did not appear to be enjoying themselves.","It involved more work than the writer's other duties.","It was held in an unsuitable room."],a:1,ex:"'They played in complete silence, as though the game were a kind of punishment'."},
+   {q:"Why had the writer given up chess when younger?",o:["The rules had become boring.","There was nobody suitable to play against.","Other interests had taken its place.","It became clear that the writer lacked exceptional talent."],a:3,ex:"'When I discovered I would never be brilliant at it'."},
+   {q:"Why did the writer deliberately lose to the children?",o:["to show them that the game could be entertaining","to give them confidence in their own ability","to find out how well each of them played","to encourage them to bring their friends"],a:0,ex:"Nadie les había dicho que el ajedrez podía ser 'funny'; perdió 'loudly, complaining' y terminaron riéndose."},
+   {q:"How did the writer feel about the headteacher's attention?",o:["pleased that the club was being recognised","annoyed that she had not helped with equipment","concerned that the club was being used to make a point","surprised by how much she knew about it"],a:2,ex:"'She was starting to see it as proof of something... I was uneasy about that'."},
+   {q:"What did Daniyar mean by his remark about chess?",o:["It was easier than his schoolwork.","It allowed him to understand his own mistakes.","He made fewer errors than in lessons.","He was punished less when he got things wrong."],a:1,ex:"'When I get it wrong, I can see why'."},
+   {q:"What does the final paragraph suggest about the board the writer was given?",o:["The writer wishes it had been made more carefully.","It is proof of the club's success in competitions.","It reminds the writer of the regret felt on leaving.","Its imperfection is part of what makes it valuable."],a:3,ex:"Menciona el casillero mal hecho y enseguida dice que nunca quiso jugar en otro tablero."}
+  ]},
+ p6:{title:"The library of things",
+  text:`In a former shoe shop on a quiet street in Leeds, you can borrow a drill, a tent, a sewing machine or a set of party lights for less than the price of a coffee. {1} Instead of books, however, its shelves hold more than six hundred objects that most households need only occasionally.
+
+The idea came to its founder, Rosa Bennett, when she moved house. Packing her belongings, she counted eleven items she had used only once. {2} It struck her that if every home on her street owned the same rarely used things, the waste involved must be enormous.
+
+Bennett began modestly, lending from her own garage to neighbours. {3} Within a year she had so many donated items that she needed proper premises, and the council offered her the empty shop at a reduced rent.
+
+Running the scheme has not been problem-free. Things come back late, dirty or broken. {4} Bennett says most members are careful, though, and that fewer than one loan in fifty causes any trouble.
+
+The most popular items are not always those she predicted. She assumed tools would be in greatest demand. {5} Bennett thinks this is because people are happy to buy a hammer, but cannot justify paying for something used at a single celebration.
+
+Similar projects have now opened in more than twenty towns, several of them with Bennett's advice. {6} 'Borrowing is the easy part,' she says. 'What matters is that people come in and end up talking to someone who lives three doors away.'`,
+  sents:["Word spread quickly, and people started offering her things they no longer wanted.","She insists, however, that saving money is not the real purpose.","The place works in much the same way as a public library.","Unfortunately, the building had to close again only a few months later.","In fact, the things borrowed most often are chocolate fountains and giant outdoor games.","Among them was an electric drill that had made exactly four holes.","A projector was once returned with a glass of juice spilt inside it."],
+  a:["C","F","A","G","E","B"],
+  ex:["La frase siguiente contrasta con 'Instead of books, however': antes tiene que aparecer la biblioteca.","'Among them' = entre los once objetos usados una sola vez.","Explica de dónde salieron los 'donated items' de la frase siguiente.","Es un ejemplo concreto de cosas que vuelven 'dirty or broken'.","'In fact' contradice lo que ella suponía; 'this' en la frase siguiente se refiere a esto.","La cita final explica cuál es 'the real purpose'."]},
+ p7:{title:"My first job",
+  intro:"Four people look back on the first job they ever had.",
+  texts:[
+   {n:"Ines",b:"My first job was waiting tables at a café on the seafront the summer I turned seventeen. I was dreadful at it initially. I once delivered an entire tray of drinks into a customer's lap. The owner could have sacked me on the spot; instead she made me do the same walk with a tray of water twenty times after closing. I've never forgotten that she chose to train me rather than replace me, and it's how I try to treat my own staff now. The pay was poor, and I spent most of it on ice cream from the place next door, but I still think of that summer with enormous affection."},
+   {n:"Marcus",b:"I delivered newspapers before school from the age of fourteen. People assume the early starts were the hard part, but I rather liked having the streets to myself. What I hated was collecting the money on Fridays, because it meant knocking on doors and asking adults to pay, and several pretended not to be in. I put every coin I earned into a jar for a guitar, which took me eleven months to afford. I suppose the job taught me to be reliable, though at the time I'd have told you it taught me nothing. I certainly never imagined I'd end up running a delivery company."},
+   {n:"Yuki",b:"I worked in my father's warehouse during the holidays, packing boxes. Being the boss's daughter was awkward; the other workers were perfectly polite, but conversations tended to stop when I walked in. I was determined to show I wasn't getting special treatment, so I volunteered for the tasks nobody wanted. The work itself was dull beyond belief, and I counted the minutes each afternoon. Still, it made one thing very clear: I did not want to take over the family business. Telling my father that, some years later, was one of the hardest conversations I've ever had."},
+   {n:"Oliver",b:"At sixteen I became a lifeguard at the local pool, mainly because my friends all swam there and I pictured myself chatting to them all day. The reality was that you weren't allowed to take your eyes off the water, even for a second, so I barely spoke to anyone. Nothing dramatic ever happened, I'm glad to say. What surprised me was the responsibility. It was the first time adults had trusted me with something that truly mattered, and I found I liked it. I'd applied for all the wrong reasons, but that feeling is why I eventually trained as a nurse."}
+  ],
+  qs:[
+   {q:"expected the job to be more sociable than it turned out to be?",a:"D",ex:"Oliver: se imaginaba charlando con sus amigos y 'I barely spoke to anyone'."},
+   {q:"felt set apart from the people they worked with?",a:"C",ex:"Yuki: 'conversations tended to stop when I walked in'."},
+   {q:"was given another chance after making a mistake?",a:"A",ex:"Ines: la dueña 'chose to train me rather than replace me'."},
+   {q:"saved their earnings for one particular thing?",a:"B",ex:"Marcus: 'every coin... into a jar for a guitar'."},
+   {q:"says the job has influenced the way they manage other people?",a:"A",ex:"Ines: 'it's how I try to treat my own staff now'."},
+   {q:"remembers the period fondly in spite of the low wages?",a:"A",ex:"Ines: 'The pay was poor... but I still think of that summer with enormous affection'."},
+   {q:"learned what they did not want to do in the future?",a:"C",ex:"Yuki: 'I did not want to take over the family business'."},
+   {q:"only later recognised what the job had given them?",a:"B",ex:"Marcus: 'at the time I'd have told you it taught me nothing'."},
+   {q:"connects their present profession with a feeling the job gave them?",a:"D",ex:"Oliver: 'that feeling is why I eventually trained as a nurse'."},
+   {q:"made a deliberate effort to prove something to others?",a:"C",ex:"Yuki: 'determined to show I wasn't getting special treatment'."}
+  ]}
+}
+];
+/*DATA-END*/
+
+const META = {
+ p1:{n:1,name:"Multiple-choice cloze",skill:"Reading",off:0,max:8,each:1,instr:"For questions 1–8, read the text below and decide which answer (A, B, C or D) best fits each gap."},
+ p2:{n:2,name:"Open cloze",skill:"Use of English",off:8,max:8,each:1,instr:"For questions 9–16, read the text below and think of the word which best fits each gap. Use only one word in each gap."},
+ p3:{n:3,name:"Word formation",skill:"Use of English",off:16,max:8,each:1,instr:"For questions 17–24, use the word given in capitals after each gap to form a word that fits in the gap."},
+ p4:{n:4,name:"Key word transformations",skill:"Use of English",off:24,max:12,each:2,instr:"For questions 25–30, complete the second sentence so that it has a similar meaning to the first sentence, using the word given. Do not change the word given. You must use between two and five words, including the word given."},
+ p5:{n:5,name:"Multiple choice",skill:"Reading",off:30,max:12,each:2,instr:"You are going to read a text. For questions 31–36, choose the answer (A, B, C or D) which you think fits best according to the text."},
+ p6:{n:6,name:"Gapped text",skill:"Reading",off:36,max:12,each:2,instr:"Six sentences have been removed from the article. Choose from the sentences A–G the one which fits each gap (37–42). There is one extra sentence which you do not need to use."},
+ p7:{n:7,name:"Multiple matching",skill:"Reading",off:42,max:10,each:1,instr:"For questions 43–52, choose from the people (A–D). The people may be chosen more than once. Which person..."}
+};
+const PARTS = Object.keys(META), L = "ABCDEFG", KEY = "b2first-bench-v1";
+let state = {ans:{}, chk:{}, t:0, p:"p1"};
+try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.ans) state = Object.assign(state, s); }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => String(s||"").toLowerCase().replace(/[‘’`]/g,"'").replace(/[.,;!?]+$/,"").replace(/\s+/g," ").trim();
+const A = () => (state.ans[state.t] = state.ans[state.t] || {});
+const C = () => (state.chk[state.t] = state.chk[state.t] || {});
+const val = (p,i) => { const v = A()[p+"-"+i]; return v === undefined ? "" : v; };
+
+function evalPart(t, p){
+  const d = TESTS[t][p], a = state.ans[t] || {}, g = i => { const v = a[p+"-"+i]; return v === undefined ? "" : v; };
+  if(p==="p1") return d.items.map((it,i)=>{ const u=g(i), ok=u!=="" && +u===it.a; return {got:ok?1:0,max:1,user:u===""?"":L[u]+" "+it.o[u],correct:L[it.a]+" "+it.o[it.a],ex:it.ex}; });
+  if(p==="p2"||p==="p3") return d.items.map((it,i)=>{ const u=g(i), ok=it.a.includes(norm(u)); return {got:ok?1:0,max:1,user:u,correct:it.a.join(" / "),ex:it.ex}; });
+  if(p==="p4") return d.items.map((it,i)=>{ const u=g(i), n=norm(u); let got=0;
+    if(new RegExp(it.full).test(n)) got=2; else if(n && it.h.some(h=>new RegExp(h).test(n))) got=1;
+    return {got,max:2,user:u,correct:it.model,ex:it.ex}; });
+  if(p==="p5") return d.qs.map((q,i)=>{ const u=g(i), ok=u!=="" && +u===q.a; return {got:ok?2:0,max:2,user:u===""?"":L[u],correct:L[q.a]+" – "+q.o[q.a],ex:q.ex}; });
+  if(p==="p6") return d.a.map((c,i)=>{ const u=g(i); return {got:u===c?2:0,max:2,user:u,correct:c+" – "+d.sents[L.indexOf(c)],ex:d.ex[i]}; });
+  return d.qs.map((q,i)=>{ const u=g(i); return {got:u===q.a?1:0,max:1,user:u,correct:q.a+" ("+d.texts[L.indexOf(q.a)].n+")",ex:q.ex}; });
+}
+const cls = r => r.got===r.max ? "ok" : r.got>0 ? "partial" : "bad";
+const sum = rs => rs.reduce((s,r)=>s+r.got,0);
+function fb(r, num){
+  const c = cls(r), label = c==="ok"?"Correcto":c==="partial"?"Parcial":"Incorrecto";
+  return `<div class="fb ${c}"><span class="pill ${c}">${label}</span><b>${num}.</b> ${c==="ok"?"":`Tu respuesta: ${r.user?esc(r.user):"<i>sin responder</i>"} · `}<span class="ans">Respuesta: ${esc(r.correct)}</span> <span>(${r.got}/${r.max})</span><br>${esc(r.ex)}</div>`;
+}
+function paras(text, fn){ return text.trim().split(/\n\s*\n/).map(p => "<p>"+esc(p).replace(/\{(\d+)\}/g,(m,n)=>fn(+n-1))+"</p>").join(""); }
+
+function viewPart(){
+  const t=state.t, p=state.p, d=TESTS[t][p], m=META[p], done=!!C()[p], R=done?evalPart(t,p):null;
+  const st = i => done ? cls(R[i]) : "", dis = done ? "disabled" : "", id = i => `t${t}-${p}-${i}`;
+  const sel = (i,opts) => `<select id="${id(i)}" data-k="${p}-${i}" class="${st(i)}" ${dis} aria-label="Pregunta ${m.off+i+1}"><option value="">–</option>${opts.map(([v,l])=>`<option value="${v}" ${String(val(p,i))===String(v)?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+  const inp = (i,c="") => `<input type="text" id="${id(i)}" data-k="${p}-${i}" class="${c} ${st(i)}" value="${esc(val(p,i))}" ${dis} autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Pregunta ${m.off+i+1}">`;
+  const num = i => m.off+i+1, gapn = i => `<b>${num(i)}</b>`;
+  const list = () => done ? `<div class="fblist">${R.map((r,i)=>fb(r,num(i))).join("")}</div>` : "";
+  let body = "";
+  if(p==="p1") body = `<div class="panel cloze"><h3>${esc(d.title)}</h3>${paras(d.text,i=>`<span class="gap">${gapn(i)}${sel(i,d.items[i].o.map((o,j)=>[j,L[j]+"  "+o]))}</span>`)}${list()}</div>`;
+  else if(p==="p2") body = `<div class="panel cloze"><h3>${esc(d.title)}</h3>${paras(d.text,i=>`<span class="gap">${gapn(i)}${inp(i)}</span>`)}${list()}</div>`;
+  else if(p==="p3") body = `<div class="panel cloze"><h3>${esc(d.title)}</h3>${paras(d.text,i=>`<span class="gap">${gapn(i)}${inp(i)}<span class="stem">${d.items[i].w}</span></span>`)}${list()}</div>`;
+  else if(p==="p4") body = `<div class="panel">${d.items.map((it,i)=>`<div class="q"><p class="qt"><b>${num(i)}</b><span>${esc(it.s1)}</span></p><p class="kw">${it.kw}</p><p style="line-height:2.2">${esc(it.pre)} ${inp(i,"wide")} ${esc(it.post)}<span class="wc" id="wc-${i}"></span></p>${done?fb(R[i],num(i)):""}</div>`).join("")}</div>`;
+  else if(p==="p5") body = `<div class="split"><div class="panel stick"><h3>${esc(d.title)}</h3>${paras(d.text,()=>"")}</div><div class="panel">${d.qs.map((q,i)=>`<div class="q"><p class="qt"><b>${num(i)}</b><span>${esc(q.q)}</span></p>${q.o.map((o,j)=>{const ch=String(val(p,i))===String(j);const c=done?(j===q.a?"ok":ch?"bad":""):"";return `<label class="opt ${c}"><input type="radio" name="${id(i)}" id="${id(i)}-${j}" data-k="${p}-${i}" value="${j}" ${ch?"checked":""} ${dis}><span class="l">${L[j]}</span><span>${esc(o)}</span></label>`}).join("")}${done?fb(R[i],num(i)):""}</div>`).join("")}</div></div>`;
+  else if(p==="p6") body = `<div class="split"><div class="panel cloze"><h3>${esc(d.title)}</h3>${paras(d.text,i=>`<span class="gap">${gapn(i)}${sel(i,d.sents.map((s,j)=>[L[j],L[j]]))}</span>`)}</div><div class="panel stick"><ul class="sents">${d.sents.map((s,j)=>`<li><b>${L[j]}</b><span>${esc(s)}</span></li>`).join("")}</ul>${list()}</div></div>`;
+  else body = `<div class="split"><div class="panel stick"><h3>${esc(d.title)}</h3><p>${esc(d.intro)}</p>${d.texts.map((x,j)=>`<div class="person"><h4><b>${L[j]}</b>${esc(x.n)}</h4><p>${esc(x.b)}</p></div>`).join("")}</div><div class="panel"><p><b>Which person...</b></p>${d.qs.map((q,i)=>`<div class="row7"><span><b>${num(i)}</b>${esc(q.q)}</span>${sel(i,d.texts.map((x,j)=>[L[j],L[j]]))}</div>${done?fb(R[i],num(i)):""}`).join("")}</div></div>`;
+  const idx = PARTS.indexOf(p);
+  return `<div class="phead"><h2>Part ${m.n} · ${m.name}</h2><span class="tag">${m.skill} · ${m.max} marks</span></div>
+  <p class="instr">${esc(m.instr)}</p>${body}
+  <div class="bar">
+    ${done?`<button class="btn" data-act="retry" type="button">Reintentar esta parte</button>`:`<button class="btn primary" data-act="check" type="button">Corregir esta parte</button><button class="btn" data-act="clear" type="button">Borrar respuestas</button>`}
+    ${idx<6?`<button class="btn" data-go="${PARTS[idx+1]}" type="button">Siguiente parte</button>`:`<button class="btn" data-go="res" type="button">Ver resultados</button>`}
+    ${done?`<span class="score">Puntaje <em>${sum(R)}</em> / ${m.max}</span>`:""}
+  </div>`;
+}
+
+function scale(v, pts){
+  if(v < pts[0][0]) return null;
+  for(let i=1;i<pts.length;i++) if(v<=pts[i][0]){ const [x0,y0]=pts[i-1],[x1,y1]=pts[i]; return Math.round(y0+(v-x0)*(y1-y0)/(x1-x0)); }
+  return pts[pts.length-1][1];
+}
+const level = s => s===null ? "Por debajo de 122 (sin nivel informado)" : s>=180 ? "Nivel C1 (Grade A)" : s>=173 ? "Nivel B2 (Grade B)" : s>=160 ? "Nivel B2 (Grade C)" : s>=140 ? "Nivel B1" : "Por debajo de B1";
+function viewRes(){
+  const t=state.t, chk=C(), all=PARTS.every(p=>chk[p]);
+  const sc = {}; PARTS.forEach(p=>sc[p]=chk[p]?sum(evalPart(t,p)):null);
+  const tot = ps => ps.reduce((s,p)=>s+(sc[p]||0),0), R=["p1","p5","p6","p7"], U=["p2","p3","p4"];
+  const rd=tot(R), ue=tot(U), rdone=R.every(p=>chk[p]), udone=U.every(p=>chk[p]);
+  const rs=scale(rd,[[10,122],[16,140],[24,160],[37,180],[42,190]]), us=scale(ue,[[7,122],[11,140],[18,160],[24,180],[28,190]]);
+  const tile=(k,v,max,done,s)=>`<div class="tile"><div class="k">${k}</div><div class="v">${done?v:"–"} <small>/ ${max}</small></div><div class="s">${done?`Escala Cambridge aprox.: <b>${s===null?"<122":s}</b><br>${level(s)}`:"Corregí todas las partes de esta sección para ver la estimación."}</div></div>`;
+  return `<div class="phead"><h2>Resultados · ${TESTS[t].name}</h2><span class="tag">${PARTS.filter(p=>chk[p]).length} de 7 partes corregidas</span></div>
+  <p class="instr">El examen informa Reading y Use of English por separado. Para aprobar con B2 necesitás alrededor de 24/42 en Reading y 18/28 en Use of English.</p>
+  <div class="tiles">${tile("Reading (Parts 1, 5, 6, 7)",rd,42,rdone,rs)}${tile("Use of English (Parts 2, 3, 4)",ue,28,udone,us)}${tile("Total del paper",rd+ue,70,all,null).replace(/<div class="s">[\s\S]*?<\/div>/, `<div class="s">${all?Math.round((rd+ue)/70*100)+"% de los marks":"Faltan partes por corregir."}</div>`)}</div>
+  <div class="panel tblwrap"><table><thead><tr><th>Parte</th><th>Tarea</th><th>Sección</th><th class="n">Puntaje</th><th>Avance</th><th></th></tr></thead><tbody>
+  ${PARTS.map(p=>{const m=META[p],v=sc[p];return `<tr><td>Part ${m.n}</td><td>${m.name}</td><td>${m.skill}</td><td class="n">${v===null?"–":v} / ${m.max}</td><td><div class="meter"><i style="width:${v===null?0:v/m.max*100}%"></i></div></td><td><button class="btn sm" data-go="${p}" type="button">${v===null?"Abrir":"Revisar"}</button></td></tr>`}).join("")}
+  </tbody></table></div>
+  <div class="bar"><button class="btn primary" data-act="checkall" type="button">Corregir todo el test</button><button class="btn" data-act="resetall" type="button">Borrar todo y empezar de nuevo</button></div>
+  <p class="note">Los textos y ejercicios de esta página son originales, escritos con el formato, la cantidad de preguntas y el puntaje del paper oficial de Reading and Use of English. No son exámenes reales de Cambridge. La conversión a la escala Cambridge es una estimación basada en la tabla oficial para practice tests; en el examen real varía un poco entre fechas. En Part 4 la corrección automática acepta las respuestas modelo y sus variantes más comunes: si escribiste otra versión válida, comparala con la respuesta modelo.</p>`;
+}
+
+function renderNav(){
+  document.getElementById("testSel").innerHTML = TESTS.map((x,i)=>`<button type="button" data-t="${i}" aria-pressed="${i===state.t}">${x.name}</button>`).join("");
+  const chk=C();
+  document.getElementById("nav").innerHTML = PARTS.map(p=>{const m=META[p],d=chk[p];return `<button type="button" data-go="${p}" aria-current="${state.p===p}"><b>Part ${m.n}</b><span>${m.name}</span><span class="sc ${d?"done":""}">${d?sum(evalPart(state.t,p))+" / "+m.max:m.max+" marks"}</span></button>`}).join("")
+   + `<button type="button" data-go="res" aria-current="${state.p==="res"}"><b>Resultados</b><span>Puntaje por sección</span><span class="sc">Reading · UoE</span></button>`;
+}
+function render(scroll){
+  renderNav();
+  document.getElementById("main").innerHTML = state.p==="res" ? viewRes() : viewPart();
+  if(state.p==="p4") document.querySelectorAll("#main input[type=text]").forEach(wc);
+  save(); if(scroll) window.scrollTo(0,0);
+}
+function wc(el){
+  const i=el.dataset.k.split("-")[1], it=TESTS[state.t].p4.items[i], out=document.getElementById("wc-"+i); if(!out) return;
+  const n=norm(el.value); if(!n){ out.textContent=""; return; }
+  const words=n.replace(/n't\b/g," not").replace(/'(d|ve|s|re|ll|m)\b/g," $1").split(" ").filter(Boolean).length;
+  const hasKw=n.split(/[^a-z]+/).includes(it.kw.toLowerCase()), bad=words<2||words>5||!hasKw;
+  out.textContent = words+(words===1?" palabra":" palabras")+(hasKw?"":" · falta la palabra clave");
+  out.className="wc"+(bad?" warn":"");
+}
+document.addEventListener("input", e=>{
+  const k=e.target.dataset && e.target.dataset.k; if(!k) return;
+  if(e.target.type==="radio" && !e.target.checked) return;
+  A()[k]=e.target.value; save();
+  if(state.p==="p4") wc(e.target);
+});
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.t!==undefined){ state.t=+b.dataset.t; render(true); return; }
+  if(b.dataset.go){ state.p=b.dataset.go; render(true); return; }
+  const act=b.dataset.act; if(!act) return;
+  if(act==="check"){ C()[state.p]=true; render(); }
+  else if(act==="retry"){ delete C()[state.p]; render(); }
+  else if(act==="clear"){ Object.keys(A()).filter(k=>k.startsWith(state.p+"-")).forEach(k=>delete A()[k]); render(); }
+  else if(act==="checkall"){ PARTS.forEach(p=>C()[p]=true); render(); }
+  else if(act==="resetall"){
+    if(b.dataset.sure){ state.ans[state.t]={}; state.chk[state.t]={}; state.p="p1"; render(true); }
+    else { b.dataset.sure="1"; b.textContent="Confirmar: borrar todas las respuestas de este test"; }
+  }
+});
+
+/* Timer: 75 minutes, same as the real paper */
+let left=75*60, tick=null;
+const clock=document.getElementById("clock"), tBtn=document.getElementById("tToggle"), tBox=document.getElementById("timer");
+function paint(){ clock.textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0"); tBox.classList.toggle("done",left===0); }
+function stop(){ clearInterval(tick); tick=null; tBtn.textContent=left===0?"Tiempo cumplido":"Continuar"; }
+tBtn.addEventListener("click",()=>{
+  if(tick){ stop(); return; }
+  if(left===0) return;
+  tBtn.textContent="Pausar";
+  tick=setInterval(()=>{ left--; paint(); if(left<=0){ left=0; paint(); stop(); } },1000);
+});
+document.getElementById("tReset").addEventListener("click",()=>{ clearInterval(tick); tick=null; left=75*60; tBtn.textContent="Iniciar"; paint(); });
+
+if(!TESTS[state.t]) state.t=0;
+if(state.p!=="res" && !META[state.p]) state.p="p1";
+render();
+</script>
+</body>
+</html>
